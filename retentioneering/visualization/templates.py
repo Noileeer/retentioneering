@@ -194,17 +194,7 @@ __TEMPLATE__ = """
       }}
       
 
-      function calcMarkers(d) {{
-
-          let dist = Math.sqrt((nodes[whereEquals(d.target.index)].x - nodes[whereEquals(d.source.index)].x) ** 2 + (nodes[whereEquals(d.target.index)].y - nodes[whereEquals(d.source.index)].y) ** 2);
-          if (dist > 0 && dist <= 200){{
-              return - Math.sqrt((0.5 - (d.target.degree ) / 2 / dist)) * (d.target.degree) / 2;
-  
-          }} else {{
-              return 0;
-          }}
-      }}
-
+      //graph links
       var path = maingroup.append("g").selectAll("path")
           .data(links)
           .enter()
@@ -215,6 +205,7 @@ __TEMPLATE__ = """
           .attr("d", linkArc)
           ;
 
+      //arrows on graph 
       let textMarkersSelection = maingroup.append("g").selectAll("text")
           .data(links)
           .enter();
@@ -237,13 +228,64 @@ __TEMPLATE__ = """
           .text("➤")
           ;
 
-      var edgetext = maingroup.append("g").selectAll("text")
+
+
+      function calculateWeightTextCoords(link) {{  
+        let x1 = nodes[whereEquals(link.source.index)].x,
+            y1 = nodes[whereEquals(link.source.index)].y,
+            x2 = nodes[whereEquals(link.target.index)].x, 
+            y2 = nodes[whereEquals(link.target.index)].y;
+
+        let dx = x2 - x1,
+            dy = y2 - y1;
+
+        // distance between the 2 points
+        let dr = Math.sqrt(dx * dx + dy * dy);
+
+        // target == source
+        if (dr == 0) {{
+          //just place text on circle at 5/4 pi
+          //the radius is this way according to linkArc function
+          minRadius = 24;
+          radius = Math.max(minRadius, nodes[whereEquals(link.source.index)].degree);
+
+          //so the point will be (x1, y1) - 1/sqrt(2)(d, d), where d = 2 * radius, right? At this point I'm just talking to myself, so nvm 
+          return [x1 - Math.sqrt(2) * radius, y1 + Math.sqrt(2) * radius];
+        }}
+
+        // as you can see in linkArc function all paths are arcs (what a surprise)
+        // so coords will be (x1, y1) + 1/2(x2 - x1, y2 - y1) + some perpendicular vector
+        // length of the vector can be calculated with Pythagorean theorem
+        // if you wanna understand any of it you better draw it
+
+        // so here is the length of the perpendicular vector
+        // it depends on radius so we have two cases (see linkArc function)
+        let offsetLength = 0;
+        if (dr > 200) {{
+          offsetLength = (5.5 - Math.sqrt(30)) * dr
+        }} else {{
+          offsetLength = (0.55 - Math.sqrt(0.0525)) * dr
+        }}
+
+        // normal vector (perpendicular with length = 1) 
+        let normalX = -dy / dr,
+            normalY = dx / dr;
+
+        let perpX = normalX * offsetLength,
+            perpY = normalY * offsetLength;
+
+        let pointX = x1 + dx / 2 - perpX,
+            pointY = y1 + dy / 2 - perpY;
+
+        return [pointX, pointY];
+      }}
+
+
+      let edgetext = maingroup.append("g") .selectAll("text")
           .data(links)
           .enter().append("text")
-          .append("textPath")
-          .attr("xlink:href",function(d,i){{return "#link_"+i;}})
-          .style("text-anchor","middle")
-          .attr("startOffset", "50%")
+          .attr('x', function(d) {{ return calculateWeightTextCoords(d)[0] }})
+          .attr('y', function(d) {{ return calculateWeightTextCoords(d)[1] }})
           .attr("id", function(d,i) {{ return "node_text"+i; }})
           ;
 
@@ -275,7 +317,6 @@ __TEMPLATE__ = """
       }};
 
 
-
         d3.selectAll("#show-weights").on("change", displayingWeights);
         d3.selectAll("#show-percents").on("change", displayingWeights);
 
@@ -284,6 +325,7 @@ __TEMPLATE__ = """
         }}
 
         function dragged(d) {{
+          //cant drag beyond border
           d3.select(this)
           .attr("cx", d.x = Math.min(Math.max(d3.event.x, 0), width))
           .attr("cy", d.y = Math.min(Math.max(d3.event.y, 0), height));
@@ -298,11 +340,15 @@ __TEMPLATE__ = """
             .attr('x', function(d) {{ return d.x; }})
             .attr('y', function(d) {{ return d.y; }})
             ;
-          defs.attr("refY", function(d) {{ return calcMarkers(d); }});
-          defs.append("path")
-            .attr("d", "M0,-5L10,0L0,5");
+
+          edgetext = edgetext
+            .attr('x', function(d) {{ return calculateWeightTextCoords(d)[0] }})
+            .attr('y', function(d) {{ return calculateWeightTextCoords(d)[1] }})
+            ;
+
         }};
 
+        //graph nodes
         var circle = maingroup.append("g").selectAll("circle")
             .data(nodes)
             .enter().append("circle")
@@ -317,6 +363,7 @@ __TEMPLATE__ = """
                 .on("end", dragended));
 
         
+
         var text = maingroup.append("g").selectAll("text")
           .data(nodes)
           .enter().append("text")
@@ -331,7 +378,9 @@ __TEMPLATE__ = """
           var dx = nodes[whereEquals(d.target.index)].x - nodes[whereEquals(d.source.index)].x,
               dy = nodes[whereEquals(d.target.index)].y - nodes[whereEquals(d.source.index)].y,
               dr = dx * dx + dy * dy;
-              dr = Math.sqrt(dr);
+
+            dr = Math.sqrt(dr);
+
             if (dr > 200) {{
               dr *= 5
             }} else {{
@@ -347,7 +396,7 @@ __TEMPLATE__ = """
             }}
         }}
 
-        //synch with 'show names' and 'show weights' checkboxes
+        //sync with 'show names' and 'show weights' checkboxes
         displayingWeights();
         changeNamesVisibility(document.getElementById("show-names").checked)
     }}
@@ -412,12 +461,14 @@ __TEMPLATE__ = """
       }}
       return newLinks;
     }}
+
     function clearSVG() {{
       $( 'svg' ).remove();
       $( '.node-edit' ).each(function() {{
         this.remove();
       }});
     }}
+
     function changeNodes() {{
       var newNodes = [];
       var newIdx = [];
