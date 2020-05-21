@@ -2259,10 +2259,14 @@ class BaseDataset(BaseTrajectory):
 
             Parameters
             --------
+            ngram_range: Tuple of ints where first value is smaller than second
             fraction: float, optional
                 Fraction of users. Should be in interval of (0,1]
             random_state: int, optional
                 random state for numpy choice function
+            exclude_cycles - boolean. If True, sycles will be excluded from list
+            exclude_loops - boolean. If True, loops will be excluded from list
+            exclude_repetitions - boolean. If True, repetative events will be merged into one. Example 'a-b-b-c' -> 'a-b-c'
 
             Returns
             --------
@@ -2293,22 +2297,24 @@ class BaseDataset(BaseTrajectory):
         if exclude_cycles:
             res = res[~res.Sequence.apply(lambda x: self._is_cycle(x))]
         if exclude_loops:
-            temp = res[~res.Sequence.apply(lambda x: self._is_loop(x))]
+            res = res[~res.Sequence.apply(lambda x: self._is_loop(x))]
         if exclude_repetitions:
             res.Sequence = res.Sequence.apply(lambda x: self._remove_duplicates(x))
+            #Merge duplicates if occured after shortening
             res = res.groupby(res.Sequence)[['Good', 'Lost']].sum().reset_index()
+            #Make sure, that shortened sequences are still in the desired ngram_range
             res = res[res.Sequence.apply(lambda x: len(x.split('~~')) in range(ngram_range[0],ngram_range[1] + 1))]
 
         res['Lost2Good'] = res['Lost'] / res['Good']
         return res[(abs(res['Lost2Good'] - 1) > coefficient) & (res.Good + res.Lost > threshold)]\
             .sort_values('Lost', ascending=False).reset_index(drop=True)
 
-    def find_cycles(self, interval, fraction=1, random_state=42, exclude_loops=False, exclude_repetitions=False):
+    def find_cycles(self, ngram_range, fraction=1, random_state=42, exclude_loops=False, exclude_repetitions=False):
         """
 
         Parameters
         ----------
-        interval - interval of lengths for search. Any int number
+        ngram_range - Tuple of ints where first value is smaller than second
         fraction - fraction of good users. Any float in (0,1]
         random_state - random_state for numpy random seed
 
@@ -2317,7 +2323,7 @@ class BaseDataset(BaseTrajectory):
 
         """
         self._init_cols(locals())
-        temp = self.find_sequences(interval, fraction, random_state, exclude_loops=exclude_loops,
+        temp = self.find_sequences(ngram_range, fraction, random_state, exclude_loops=exclude_loops,
                                    exclude_repetitions=exclude_repetitions).reset_index(drop=True)
         return temp[temp['Sequence'].apply(lambda x: self._is_cycle(x))].reset_index(drop=True)
 
