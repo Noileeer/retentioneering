@@ -2260,13 +2260,24 @@ class BaseDataset(BaseTrajectory):
             Parameters
             --------
             ngram_range: Tuple of ints where first value is smaller than second
-            fraction: float, optional
+            fraction: float
                 Fraction of users. Should be in interval of (0,1]
             random_state: int, optional
                 random state for numpy choice function
-            exclude_cycles - boolean. If True, sycles will be excluded from list
-            exclude_loops - boolean. If True, loops will be excluded from list
-            exclude_repetitions - boolean. If True, repetative events will be merged into one. Example 'a-b-b-c' -> 'a-b-c'
+            exclude_cycles: boolean.
+                If True, cycles will be excluded from list.
+                IMPORTANT: cycle is a sequence in which first and last events are the same. Sequences like "a-a-b" are nor cycles in this definition
+            exclude_loops: boolean.
+                If True, loops will be excluded from list.
+                Loops are bigrams in which both events are the same like "a-a"
+            exclude_repetitions: boolean.
+                If True, repetative events will be merged into one. It is usefil in cases where we have multiple sequences like "a-a-b", "a-a-a-b" and for us there is no big
+                difference if the "a" event occured 2 or 3 times in a row, so we trim them all tp "a-b" and sum up all the occurences. Example 'a-b-b-c' -> 'a-b-c'
+            threshold - int.
+                If it's greater than zero, the function will return only those ngrams, which have occured more than threshold times
+            coefficient - float in range [0,1).
+                If it's greater than zero, the function will return only those ngrams, for which x = abs(res['Lost2Good'] - 1) > coefficient.
+                Here, we're using x as a measure of deviation of ngram. If it is far away from 1, we could make an assumption that this ngram is a good marker for good/bad target event.
 
             Returns
             --------
@@ -2314,9 +2325,16 @@ class BaseDataset(BaseTrajectory):
 
         Parameters
         ----------
-        ngram_range - Tuple of ints where first value is smaller than second
-        fraction - fraction of good users. Any float in (0,1]
-        random_state - random_state for numpy random seed
+        ngram_range: Tuple of ints where first value is smaller than second
+        fraction: float
+                Fraction of users. Should be in interval of (0,1]
+        random_state: int, optional
+            random_state for numpy random seed
+        exclude_loops: boolean.
+            If True, loops will be excluded from list. Loops are bigrams in which both events are the same like "a-a"
+        exclude_repetitions: boolean.
+            If True, repetative events will be merged into one. It is usefil in cases where we have multiple sequences like "a-a-b", "a-a-a-b" and for us there is no big
+            difference if the "a" event occured 2 or 3 times in a row, so we trim them all tp "a-b" and sum up all the occurences. Example 'a-b-b-c' -> 'a-b-c'
 
         Returns pd.DataFrame with cycles
         -------
@@ -2332,11 +2350,13 @@ class BaseDataset(BaseTrajectory):
         Function for loop searching
         Parameters
         ----------
-        fraction - fraction of good users. Any float in (0,1]
-        random_state - random_state for numpy random seed
+        fraction: float
+                Fraction of users. Should be in interval of (0,1]
+        random_state: int, optional
+            random_state for numpy random seed
 
-        Returns pd.DataFrame with loops. Good, Lost columns are for all occurences,
-        (Good/Lost)_no_duplicates are for counting each cycle only once for user in which they occur
+        Returns pd.DataFrame with loops. Good, Lost, Lost2Good columns are for all occurences,
+        UniqueLost2Good are for counting each cycle only once for user in which they occur
         -------
 
         """
