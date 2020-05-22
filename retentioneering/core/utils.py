@@ -2322,7 +2322,8 @@ class BaseDataset(BaseTrajectory):
 
     def find_cycles(self, ngram_range, fraction=1, random_state=42, exclude_loops=False, exclude_repetitions=False):
         """
-
+        Function for cycles searching.
+        IMPORTANT: cycle is a sequence in which first and last events are the same. Sequences like "a-a-b" are nor cycles in this definition
         Parameters
         ----------
         ngram_range: Tuple of ints where first value is smaller than second
