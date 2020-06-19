@@ -132,7 +132,7 @@ def simple_cluster(data, max_n_clusters=None, use_csi=True, random_state=0, **kw
     metrics = calc_all_metrics(data, km)
     if use_csi:
         metrics['csi'] = cluster_stability_index(data, km, bs, **kwargs)
-    return cl, metrics
+    return km,cl, metrics
 
 
 def aggregate_cl(cl, max_cl_number):

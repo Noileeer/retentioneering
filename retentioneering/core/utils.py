@@ -909,7 +909,7 @@ class BaseDataset(BaseTrajectory):
             features = self.extract_features(**kwargs)
         if not hasattr(self, 'clusters') or refit_cluster:
             clusterer = getattr(clustering, method)
-            self.clusters, self._metrics = clusterer(features, **kwargs)
+            self._clusterer, self.clusters, self._metrics = clusterer(features, **kwargs)
             self._create_cluster_mapping(features.index.values)
 
         if hasattr(self, 'datatype') and self.datatype == 'features':
