@@ -277,11 +277,17 @@ __TEMPLATE__ = """
           if (cb.property("checked")) {{
             edgetext = edgetext.text(function(d) {{
                 if ($('#show-percents')[0].checked) {{
-                    //return Math.round(d['weight_text'] * 100) + "%";
-                    return roundToSignificantFigures(d['weight_text'] * 100, 2) + "%";
+                    if (d['weight_text'] > 1) {{
+                      return d['weight_text']
+                    }} else {{
+                      return roundToSignificantFigures(d['weight_text'] * 100, 2) + "%";
+                    }};
                 }} else {{
-                    //return Math.round(d['weight_text'] * 100) / 100;
-                    return roundToSignificantFigures(d['weight_text'], 2);
+                    if (d['weight_text'] > 1) {{
+                      return d['weight_text']
+                    }} else {{
+                      return roundToSignificantFigures(d['weight_text'], 2);
+                    }};
                 }}
             }})
           }} else {{
@@ -470,12 +476,12 @@ __TEMPLATE__ = """
             newLinks.push(mylinks[i]);
             idxInLinks[mylinks[i].target.index] = true;
             idxInLinks[mylinks[i].source.index] = true;
-          }} else if (mylinks[i].weight / maxWeigth >= thresholdValue) {{
+          }} else if (mylinks[i].weight * maxWeigth >= thresholdValue) {{
             newLinks.push(mylinks[i]);
             idxInLinks[mylinks[i].target.index] = true;
             idxInLinks[mylinks[i].source.index] = true;
           }}
-        }} else if (mylinks[i].weight / maxWeigth >= thresholdValue) {{
+        }} else if (mylinks[i].weight * maxWeigth >= thresholdValue) {{
           newLinks.push(mylinks[i]);
           idxInLinks[mylinks[i].target.index] = true;
           idxInLinks[mylinks[i].source.index] = true;
@@ -807,7 +813,7 @@ __TEMPLATE__ = """
             </div>
 
             <div class="bottom-checkbox">
-              <input type="checkbox" class="checkbox checkbox-class" checked id="block-targets" onchange="setLinkThreshold ()"><label> Show all edges for targets </label>
+              <input type="checkbox" class="checkbox checkbox-class" id="block-targets" onchange="setLinkThreshold ()"><label> Show all edges for targets </label>
             </div>
             <div id="option">
               <input name="downloadButton"
