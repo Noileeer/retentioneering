@@ -733,7 +733,7 @@ class BaseDataset(BaseTrajectory):
         sequences = self.find_sequences(ngram_range=ngram_range, fraction=1, exclude_cycles=exclude_cycles,
                                         exclude_loops=exclude_loops, exclude_repetitions=exclude_repetitions)
         sequences = sequences[
-            ((sequences.Lost + sequences.Good) >= min_threshold) & (abs(sequences.Lost2Good - 1) >= min_coeff)]
+            ((sequences.Lost + sequences.Good) >= min_threshold) & (abs(sequences.Lost2Good - 1) >= min_coeff)].reset_index()
         vocab = {' '.join(ngram.lower().split('~~')): ind for ind, ngram in enumerate(sequences.Sequence)}
         return vocab
 
@@ -796,6 +796,10 @@ class BaseDataset(BaseTrajectory):
         else:
             tmp = self._obj
         vocab = None
+
+        if 'vocab' in kwargs.keys():
+            vocab = kwargs['vocab']
+            kwargs.pop('vocab')
 
         if 'vocab_pars' in kwargs.keys():
             vocab = self.prepare_vocab(**kwargs['vocab_pars'])
