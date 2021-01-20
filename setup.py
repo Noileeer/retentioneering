@@ -27,6 +27,7 @@ setup(
         'matplotlib>=3.3.1',
         'scikit-learn>=0.23.2',
         'statsmodels>=0.12.0',
+        'shap',
         'xgboost',
         'scipy',
         'altair',

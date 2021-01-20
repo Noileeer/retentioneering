@@ -43,6 +43,10 @@ class Predictor:
                                evallist,
                                early_stopping_rounds=16)
 
+    def predict(self, features):
+        data = xgb.DMatrix(features)
+        return self.model.predict(data)
+
     def export_model(self, file_name):
         pickle.dump(self.model, open(f"{file_name}.pkl", "wb"))
 
